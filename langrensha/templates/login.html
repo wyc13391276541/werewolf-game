@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}管理员登录 - 狼人杀{% endblock %}
+
+{% block content %}
+<div class="header">
+    <h1>🐺 管理员登录</h1>
+    <p class="subtitle">请输入管理密码</p>
+</div>
+
+<div class="card">
+    <form method="POST">
+        <div class="input-group">
+            <label><i class="fas fa-lock"></i> 密码</label>
+            <input type="password" name="password" placeholder="请输入管理密码" required autofocus>
+        </div>
+        
+        {% if error %}
+        <div class="alert alert-error">
+            <i class="fas fa-exclamation-circle"></i> {{ error }}
+        </div>
+        {% endif %}
+        
+        <button type="submit" class="btn btn-primary btn-block">
+            <i class="fas fa-sign-in-alt"></i> 登录
+        </button>
+    </form>
+</div>
+
+<div class="refresh-info">
+    <p><i class="fas fa-shield-alt"></i> 管理后台 - 需要密码访问</p>
+</div>
+{% endblock %}

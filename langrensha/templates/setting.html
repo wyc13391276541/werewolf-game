@@ -1,0 +1,517 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+    <title>管理面板 - 偏置骰子和硬币</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .logout-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            transition: background 0.3s;
+        }
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .nav-links {
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 5px;
+        }
+        .nav-links a {
+            color: #667eea;
+            text-decoration: none;
+            margin: 0 10px;
+            padding: 5px 10px;
+        }
+        .nav-links a:hover {
+            background: #667eea;
+            color: white;
+            border-radius: 3px;
+        }
+        .card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .card h3 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .refresh-info {
+            background: #e8f4f8;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .refresh-info strong {
+            color: #2196F3;
+        }
+        button, .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        button:hover, .btn:hover {
+            background: #5a67d8;
+        }
+        .btn-danger {
+            background: #f44336;
+        }
+        .btn-danger:hover {
+            background: #da190b;
+        }
+        .btn-success {
+            background: #4CAF50;
+        }
+        .btn-success:hover {
+            background: #45a049;
+        }
+        input[type="text"], input[type="password"] {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 200px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: center;
+        }
+        td {
+            padding: 10px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+        }
+        tr:hover {
+            background: #f5f5f5;
+        }
+        .preset-active {
+            background: #FFF3E0;
+        }
+        .legend {
+            display: inline-block;
+            margin: 0 10px;
+            font-size: 12px;
+        }
+        .legend span {
+            display: inline-block;
+            width: 20px;
+            text-align: center;
+            margin-right: 5px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        .status-occupied {
+            background: #ff9800;
+            color: white;
+        }
+        .status-free {
+            background: #4CAF50;
+            color: white;
+        }
+        .loading {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 5px;
+            z-index: 1000;
+        }
+        .message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+        }
+        .message-success {
+            background: #4CAF50;
+            color: white;
+        }
+        .message-error {
+            background: #f44336;
+            color: white;
+        }
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎲 管理面板</h1>
+            <a href="/logout" class="logout-btn" onclick="return confirm('确定要退出登录吗？')">退出登录</a>
+        </div>
+        
+        <div class="refresh-info">
+            <strong>⏰ 自动刷新时间：</strong>每天 06:30 和 12:30<br>
+            <strong>🕐 下次刷新：</strong>{{ refresh_info.next_refresh_time }} ({{ refresh_info.countdown_text }})<br>
+            <strong>🔄 上次刷新：</strong>{{ refresh_info.last_refresh_time }}
+        </div>
+        
+        <div class="nav-links">
+            <a href="/">🏠 返回首页</a>
+            <a href="#" onclick="refreshAllCodes()">🔄 刷新所有代码</a>
+            <a href="#" onclick="location.reload()">📊 刷新状态</a>
+        </div>
+        
+        <div class="card">
+            <h3>🔧 批量操作</h3>
+            <button class="btn-danger" onclick="refreshAllCodes()" style="margin-right: 10px;">
+                🔄 刷新所有代码
+            </button>
+            <button onclick="clearAllPresets()">
+                🗑️ 清除所有预定结果
+            </button>
+            <p style="margin-top: 10px; font-size: 12px; color: #666;">
+                ⚠️ 刷新代码将重置所有房间代码，并清除所有占用状态和预定结果
+            </p>
+        </div>
+        
+        <div class="card">
+            <h3>⚙️ 设置结果序列</h3>
+            <form id="setResultForm">
+                <table border="0" cellpadding="8">
+                    <tr>
+                        <td width="120">代码:</td>
+                        <td><input type="text" id="room_code" name="room_code" size="10" maxlength="4" placeholder="输入4位代码" required></td>
+                    </tr>
+                    <tr>
+                        <td>结果序列:</td>
+                        <td><input type="text" id="result_value" name="result_value" size="30" placeholder="例: 1,2,3 或 1,0,1" required></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td>
+                            <button type="submit" class="btn-success">✅ 设置结果序列</button>
+                            <button type="button" onclick="clearForm()">🗑️ 清空</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td>
+                            <font size="2" color="#666">
+                                💡 提示：<br>
+                                - 骰子: 输入1-6，用逗号分隔 (例: 1,3,5)<br>
+                                - 硬币: 输入1(正面)/0(反面)，用逗号分隔 (例: 1,0,1)<br>
+                                - 支持多个结果，按顺序执行
+                            </font>
+                        </td>
+                    </tr>
+                </table>
+            </form>
+        </div>
+        
+        <h3>📋 当前状态</h3>
+        <table border="0" cellpadding="8" cellspacing="0">
+            <thead>
+                <tr>
+                    <th>代码</th>
+                    <th>类型</th>
+                    <th>状态</th>
+                    <th>预定序列</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody id="room-table-body">
+                {% for room in room_status %}
+                <tr {% if room.has_preset %}class="preset-active"{% endif %}>
+                    <td align="center"><strong>{{ room.code }}</strong></td>
+                    <td align="center">{{ '🎲 骰子' if room.type == 'dice' else '🪙 硬币' }}</td>
+                    <td align="center">
+                        <span class="status-badge {% if room.occupied %}status-occupied{% else %}status-free{% endif %}">
+                            {{ '使用中' if room.occupied else '空闲' }}
+                        </span>
+                    </td>
+                    <td align="center">
+                        {% if room.has_preset %}
+                            <code>{{ room.next_results }}</code>
+                        {% else %}
+                            <span style="color: #999;">随机</span>
+                        {% endif %}
+                    </td>
+                    <td align="center">
+                        <button onclick="clearPreset('{{ room.code }}')" style="padding: 5px 10px; font-size: 12px;">
+                            🗑️ 清除
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <br>
+        
+        <div style="text-align: center; padding: 10px;">
+            <div class="legend">
+                <span style="background: #FFF3E0; padding: 2px 5px;">📌</span> 有预定序列
+            </div>
+            <div class="legend">
+                <span>✓</span> 已执行
+            </div>
+            <div class="legend">
+                <span>●</span> 下一个
+            </div>
+            <div class="legend">
+                <span>○</span> 待执行
+            </div>
+        </div>
+    </div>
+    
+    <div id="loading" class="loading">处理中...</div>
+    
+    <script>
+        // 显示消息
+        function showMessage(message, type = 'success') {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message message-${type}`;
+            msgDiv.innerHTML = message;
+            document.body.appendChild(msgDiv);
+            
+            setTimeout(() => {
+                msgDiv.remove();
+            }, 3000);
+        }
+        
+        // 显示加载状态
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+        }
+        
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+        
+        // 刷新所有代码
+        function refreshAllCodes() {
+            if (confirm('⚠️ 确定要刷新所有代码吗？\n\n这将：\n- 生成全新的10个代码\n- 清除所有占用状态\n- 清除所有预定结果\n\n确定要继续吗？')) {
+                showLoading();
+                fetch('/api/setting/refresh_codes', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    if (data.success) {
+                        showMessage('✅ ' + data.message, 'success');
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1000);
+                    } else {
+                        showMessage('❌ 刷新失败：' + data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    showMessage('❌ 网络错误：' + error, 'error');
+                });
+            }
+        }
+        
+        // 清除所有预定结果
+        function clearAllPresets() {
+            if (confirm('确定要清除所有预定结果吗？')) {
+                showLoading();
+                const rooms = {{ room_status | tojson }};
+                let promises = [];
+                
+                for (let room of rooms) {
+                    if (room.has_preset) {
+                        promises.push(
+                            fetch('/api/setting/clear_preset', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({room_code: room.code})
+                            })
+                        );
+                    }
+                }
+                
+                Promise.all(promises)
+                    .then(() => {
+                        hideLoading();
+                        showMessage('✅ 已清除所有预定结果', 'success');
+                        setTimeout(() => location.reload(), 1000);
+                    })
+                    .catch(error => {
+                        hideLoading();
+                        showMessage('❌ 操作失败：' + error, 'error');
+                    });
+            }
+        }
+        
+        // 清除单个预定结果
+        function clearPreset(roomCode) {
+            if (confirm(`确定要清除代码 ${roomCode} 的预定结果吗？`)) {
+                showLoading();
+                fetch('/api/setting/clear_preset', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({room_code: roomCode})
+                })
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    if (data.success) {
+                        showMessage(`✅ 已清除代码 ${roomCode} 的预定结果`, 'success');
+                        setTimeout(() => location.reload(), 500);
+                    } else {
+                        showMessage('❌ 清除失败：' + data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    hideLoading();
+                    showMessage('❌ 网络错误：' + error, 'error');
+                });
+            }
+        }
+        
+        // 设置结果
+        document.getElementById('setResultForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const roomCode = document.getElementById('room_code').value.trim();
+            const resultValue = document.getElementById('result_value').value.trim();
+            
+            if (!roomCode || !resultValue) {
+                showMessage('请填写完整信息', 'error');
+                return;
+            }
+            
+            // 验证格式
+            const values = resultValue.split(',');
+            let isValid = true;
+            let type = null;
+            
+            // 判断是骰子还是硬币
+            for (let v of values) {
+                v = v.trim();
+                if (v === '0' || v === '1') {
+                    type = 'coin';
+                } else if (['1','2','3','4','5','6'].includes(v)) {
+                    type = 'dice';
+                } else {
+                    isValid = false;
+                    break;
+                }
+            }
+            
+            if (!isValid) {
+                showMessage('格式错误：骰子请输入1-6，硬币请输入0或1，用逗号分隔', 'error');
+                return;
+            }
+            
+            showLoading();
+            fetch('/api/setting/set_result', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    room_code: roomCode,
+                    result_value: resultValue
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.success) {
+                    showMessage('✅ ' + data.message, 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showMessage('❌ 设置失败：' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                showMessage('❌ 网络错误：' + error, 'error');
+            });
+        });
+        
+        function clearForm() {
+            document.getElementById('room_code').value = '';
+            document.getElementById('result_value').value = '';
+        }
+        
+        // 自动刷新状态（每30秒）
+        setInterval(() => {
+            fetch('/api/room_status')
+                .then(response => response.json())
+                .catch(error => console.log('状态更新失败:', error));
+        }, 30000);
+    </script>
+</body>
+</html>

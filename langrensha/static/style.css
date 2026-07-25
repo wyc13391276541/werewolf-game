@@ -1,0 +1,337 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: #333;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+h1 {
+    text-align: center;
+    color: white;
+    margin-bottom: 30px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.room-selection {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.room-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.room-item {
+    display: flex;
+    gap: 10px;
+}
+
+.btn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    flex: 1;
+}
+
+.btn-setting {
+    background: #4CAF50;
+    color: white;
+}
+
+.btn-enter {
+    background: #2196F3;
+    color: white;
+}
+
+.btn-primary {
+    background: #FF5722;
+    color: white;
+}
+
+.btn-roll {
+    background: #9C27B0;
+    color: white;
+    font-size: 18px;
+    padding: 15px 30px;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.setting-section {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.setting-section h2 {
+    color: #333;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+}
+
+.control-group {
+    margin-bottom: 20px;
+}
+
+.control-group h3 {
+    margin-bottom: 10px;
+    color: #666;
+}
+
+.dice-btn, .coin-btn {
+    margin: 5px;
+    background: #607D8B;
+    color: white;
+}
+
+.game-area {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+.dice-area, .coin-area {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.result-display {
+    min-height: 150px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 20px 0;
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+}
+
+.result-display img {
+    max-width: 100px;
+    max-height: 100px;
+    margin-bottom: 10px;
+}
+
+.actions {
+    text-align: center;
+}
+
+.info {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    margin-top: 20px;
+}
+
+input, textarea {
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+    margin-right: 10px;
+}
+
+input:focus, textarea:focus {
+    border-color: #2196F3;
+    outline: none;
+}
+
+@media (max-width: 768px) {
+    .game-area {
+        grid-template-columns: 1fr;
+    }
+    
+    .room-buttons {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* 添加到现有样式表中 */
+
+.password-section {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    margin-bottom: 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.quick-buttons {
+    margin-bottom: 20px;
+}
+
+.button-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.quick-form {
+    display: contents;
+}
+
+.quick-btn {
+    background: #4CAF50;
+    color: white;
+    padding: 10px;
+    font-size: 14px;
+}
+
+.custom-setting {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    margin-top: 20px;
+}
+
+.room-status table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.room-status th,
+.room-status td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.room-status th {
+    background: #f8f9fa;
+    font-weight: bold;
+}
+
+.alert {
+    padding: 12px;
+    border-radius: 5px;
+    margin: 15px 0;
+}
+
+.alert-error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.alert-success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+/* 添加到现有样式表中 */
+
+.header-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.btn-refresh {
+    background: #17a2b8;
+    color: white;
+}
+
+.help-text {
+    font-size: 12px;
+    color: #666;
+    margin-top: 5px;
+}
+
+.result-sequence {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+}
+
+.legend {
+    display: flex;
+    gap: 15px;
+    margin-top: 10px;
+    font-size: 12px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.symbol {
+    font-weight: bold;
+}
+
+tr.has-preset {
+    background-color: #f0f8ff;
+}
+
+tr.has-preset td {
+    border-left: 3px solid #007bff;
+}
+
+/* 表格样式优化 */
+.room-status table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.room-status th {
+    background: #f8f9fa;
+    font-weight: bold;
+    padding: 12px;
+    text-align: left;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.room-status td {
+    padding: 12px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.room-status tr:last-child td {
+    border-bottom: none;
+}

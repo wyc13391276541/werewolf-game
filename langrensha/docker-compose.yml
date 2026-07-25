@@ -1,0 +1,15 @@
+services:
+  langrensha:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: langrensha
+    ports:
+      - "5544:5000"
+    volumes:
+      - ./logs:/app/logs
+    environment:
+      - TZ=Asia/Shanghai
+      - FLASK_ENV=production
+      - SECRET_KEY=your-secret-key-change-in-production
+    restart: unless-stopped

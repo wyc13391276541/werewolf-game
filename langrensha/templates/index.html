@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🐺 狼人杀发牌</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            padding: 40px 0 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            color: #e94560;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .room-count {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 15px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            background: #e94560;
+            border-color: #e94560;
+        }
+        
+        .card {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #ccc;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 12px;
+            background: rgba(255,255,255,0.05);
+            color: #fff;
+            font-size: 1rem;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #e94560;
+        }
+        
+        .input-group input::placeholder {
+            color: #888;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #e94560, #c62a47);
+            color: #fff;
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 30px;
+            z-index: 1000;
+            animation: fadeInUp 0.3s;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translate(-50%, 20px);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, 0);
+            }
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(26, 26, 46, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        
+        .loading-spinner {
+            text-align: center;
+        }
+        
+        .loading-spinner .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: #e94560;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .info-text {
+            color: #888;
+            font-size: 0.9rem;
+            margin-top: 15px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>加载中...</p>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="header">
+            <h1>🐺 狼人杀</h1>
+            <p style="color: #aaa; margin-top: 10px;">发牌助手</p>
+        </div>
+        
+        <div class="room-count" id="roomCountDisplay">
+            当前房间: <span id="currentRooms">0</span>/<span id="maxRooms">{{ max_rooms }}</span>
+        </div>
+        
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('create')">创建房间（‘上帝’）</div>
+            <div class="tab" onclick="switchTab('join')">加入房间（玩家）</div>
+        </div>
+        
+        <!-- 创建房间 -->
+        <div id="createPanel" class="card">
+            <div class="input-group">
+                <label>👑 ‘上帝’昵称</label>
+                <input type="text" id="createName" placeholder="请输入昵称" maxlength="20">
+            </div>
+            <button class="btn btn-primary" id="createBtn" onclick="createRoom()">
+                创建房间
+            </button>
+            <p class="info-text">
+                💡 创建房间后需要点击"开放房间"玩家才能加入
+            </p>
+            <p class="info-text">
+                ⏰ 房间创建后35分钟自动关闭
+            </p>
+        </div>
+        
+        <!-- 加入房间 -->
+        <div id="joinPanel" class="card hidden">
+            <div class="input-group">
+                <label>🚪 房间号</label>
+                <input type="text" id="roomCode" placeholder="请输入6位房间号" maxlength="6" inputmode="numeric">
+            </div>
+            <div class="input-group">
+                <label>👤 你的昵称</label>
+                <input type="text" id="joinName" placeholder="请输入昵称" maxlength="20">
+            </div>
+            <button class="btn btn-primary" id="joinBtn" onclick="joinRoom()">
+                加入房间
+            </button>
+        </div>
+    </div>
+    
+    <div id="toastContainer"></div>
+    
+    <script>
+        // 初始化用户ID
+        let userId = localStorage.getItem('werewolf_user_id');
+        if (!userId) {
+            userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('werewolf_user_id', userId);
+        }
+        
+        // 检查是否有未完成的房间
+// 页面加载时不自动检查跳转，只在加入房间时检查
+// 删除或注释掉 index.html 中的 checkExistingRoom() 调用
+
+// 如果需要检查，只提示而不自动跳转
+async function checkExistingRoom() {
+    try {
+        const response = await fetch(`/api/check_user_room/${userId}`);
+        if (!response.ok) return;
+        
+        const data = await response.json();
+        if (data.has_room && data.is_god) {
+            // 如果是‘上帝’，询问是否返回
+            if (confirm('您有未结束的游戏（‘上帝’），是否返回房间？')) {
+                window.location.href = `/room/${data.room_code}`;
+            } else {
+                // 清除记录
+                localStorage.removeItem('werewolf_user_id');
+                userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('werewolf_user_id', userId);
+            }
+        }
+    } catch (e) {
+        console.error('检查现有房间失败:', e);
+    }
+}
+        
+        // 页面加载时检查
+        checkExistingRoom();
+        
+        // 更新房间数量
+        function updateRoomCount() {
+            fetch('/api/room_count')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('currentRooms').textContent = data.current;
+                })
+                .catch(() => {});
+        }
+        
+        updateRoomCount();
+        setInterval(updateRoomCount, 300000);
+        
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if (tab === 'create') {
+                document.getElementById('createPanel').classList.remove('hidden');
+                document.getElementById('joinPanel').classList.add('hidden');
+            } else {
+                document.getElementById('createPanel').classList.add('hidden');
+                document.getElementById('joinPanel').classList.remove('hidden');
+            }
+        }
+        
+        function showToast(msg, isError = false) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.style.background = isError ? 'rgba(233, 69, 96, 0.9)' : 'rgba(0,0,0,0.8)';
+            toast.textContent = msg;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+        
+        function createRoom() {
+            const name = document.getElementById('createName').value.trim();
+            if (!name) {
+                showToast('请输入昵称', true);
+                return;
+            }
+            
+            const btn = document.getElementById('createBtn');
+            btn.disabled = true;
+            btn.textContent = '创建中...';
+            
+            sessionStorage.setItem('playerName', name);
+            sessionStorage.setItem('isCreator', 'true');
+            
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            window.location.href = '/room/new';
+        }
+        
+        function joinRoom() {
+            const code = document.getElementById('roomCode').value.trim();
+            const name = document.getElementById('joinName').value.trim();
+            
+            if (!code) {
+                showToast('请输入房间号', true);
+                return;
+            }
+            if (code.length !== 6 || !/^\d+$/.test(code)) {
+                showToast('房间号为6位数字', true);
+                return;
+            }
+            if (!name) {
+                showToast('请输入昵称', true);
+                return;
+            }
+            
+            const btn = document.getElementById('joinBtn');
+            btn.disabled = true;
+            btn.textContent = '检查中...';
+            
+            fetch(`/api/check_room/${code}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.exists) {
+                        showToast('房间不存在', true);
+                        btn.disabled = false;
+                        btn.textContent = '加入房间';
+                        return;
+                    }
+                    if (!data.accepting) {
+                        showToast('房间暂未开放', true);
+                        btn.disabled = false;
+                        btn.textContent = '加入房间';
+                        return;
+                    }
+                    if (data.game_started) {
+                        showToast('游戏已开始，无法加入', true);
+                        btn.disabled = false;
+                        btn.textContent = '加入房间';
+                        return;
+                    }
+                    if (data.player_count >= data.max_players) {
+                        showToast('房间已满', true);
+                        btn.disabled = false;
+                        btn.textContent = '加入房间';
+                        return;
+                    }
+                    
+                    sessionStorage.setItem('playerName', name);
+                    sessionStorage.setItem('isCreator', 'false');
+                    document.getElementById('loadingOverlay').style.display = 'flex';
+                    window.location.href = `/room/${code}`;
+                })
+                .catch(err => {
+                    showToast('网络错误', true);
+                    btn.disabled = false;
+                    btn.textContent = '加入房间';
+                });
+        }
+        
+        document.getElementById('roomCode').addEventListener('input', function(e) {
+            this.value = this.value.replace(/\D/g, '').slice(0, 6);
+        });
+    </script>
+</body>
+</html>

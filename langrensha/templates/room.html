@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>房间 - 狼人杀</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(26, 26, 46, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        
+        .loading-spinner {
+            text-align: center;
+        }
+        
+        .loading-spinner .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: #e94560;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .room-code {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #e94560;
+            letter-spacing: 5px;
+        }
+        
+        .copy-btn {
+            background: none;
+            border: none;
+            color: #aaa;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 10px;
+        }
+        
+        .copy-btn:hover {
+            color: #fff;
+        }
+        
+        .timer-badge {
+            background: rgba(233, 69, 96, 0.2);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: #e94560;
+        }
+        
+        .card {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .card-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .players-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        
+        .player-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 12px 8px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
+            position: relative;
+        }
+        
+        .player-card .player-icon {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+        
+        .player-card .player-name {
+            font-size: 0.9rem;
+            word-break: break-word;
+        }
+        
+        .player-card .kick-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: none;
+            border: none;
+            color: #e94560;
+            cursor: pointer;
+            font-size: 0.8rem;
+            opacity: 0.6;
+        }
+        
+        .player-card.player-offline {
+            opacity: 0.5;
+        }
+        
+        .player-card .offline-badge {
+            font-size: 0.7rem;
+            color: #ffc107;
+        }
+        
+        .role-card {
+            text-align: center;
+            padding: 30px;
+            background: linear-gradient(135deg, rgba(233,69,96,0.1), rgba(15,52,96,0.1));
+            border-radius: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .role-icon {
+            font-size: 4rem;
+            margin-bottom: 15px;
+        }
+        
+        .role-name {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #e94560;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #e94560, #c62a47);
+            color: #fff;
+        }
+        
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #4caf50, #2e7d32);
+            color: #fff;
+        }
+        
+        .btn-block {
+            width: 100%;
+        }
+        
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+        }
+        
+        .settings-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .settings-row label {
+            min-width: 80px;
+            color: #ccc;
+        }
+        
+        .settings-row select,
+        select {
+            flex: 1;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        
+        .settings-row select option,
+        select option {
+            background: #1a1a2e;
+            color: #fff;
+        }
+        
+        .settings-row select:focus,
+        select:focus {
+            outline: none;
+            border-color: #e94560;
+        }
+        
+        .role-tag {
+            display: inline-block;
+            padding: 5px 12px;
+            margin: 3px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .role-tag:hover {
+            background: rgba(233,69,96,0.3);
+        }
+        
+        .role-pool {
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 10px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .god-panel {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .god-player-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .god-player-item:hover {
+            background: rgba(233,69,96,0.2);
+        }
+        
+        .god-player-item .player-role {
+            color: #e94560;
+            font-weight: bold;
+        }
+        
+        .god-offline-banner {
+            background: rgba(233, 69, 96, 0.3);
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+            color: #e94560;
+            border: 1px solid #e94560;
+            grid-column: 1 / -1;
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 30px;
+            z-index: 1000;
+            animation: fadeInUp 0.3s;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translate(-50%, 20px);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, 0);
+            }
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .action-buttons .btn {
+            flex: 1;
+        }
+        
+        .role-hidden {
+            filter: blur(8px);
+            cursor: pointer;
+            transition: filter 0.2s;
+        }
+        
+        .role-hidden:hover {
+            filter: blur(0);
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+        
+        .status-waiting {
+            background: rgba(255,193,7,0.2);
+            color: #ffc107;
+        }
+        
+        .status-open {
+            background: rgba(76,175,80,0.2);
+            color: #4caf50;
+        }
+        
+        .status-playing {
+            background: rgba(233,69,96,0.2);
+            color: #e94560;
+        }
+        
+        .info-text {
+            color: #aaa;
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p id="loadingText">连接中...</p>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="header">
+            <div>
+                <span class="room-code" id="roomCodeDisplay">------</span>
+                <button class="copy-btn" onclick="copyRoomCode()" title="复制房间号">📋</button>
+            </div>
+            <div>
+                <span class="timer-badge" id="roomTimer">--:--</span>
+                <button class="btn btn-secondary btn-small" onclick="leaveRoom()" style="margin-left: 10px;">离开</button>
+            </div>
+        </div>
+        
+        <div id="godSetupArea" class="card hidden">
+            <div class="card-title">
+                <span>👑 上帝设置</span>
+                <span class="status-badge status-waiting" id="roomStatus">未开放</span>
+            </div>
+            
+            <div class="settings-row">
+                <label>游戏人数</label>
+                <select id="playerCountSelect" onchange="updatePlayerCount()">
+                    <option value="4">4人</option>
+                    <option value="5">5人</option>
+                    <option value="6" selected>6人</option>
+                    <option value="7">7人</option>
+                    <option value="8">8人</option>
+                    <option value="9">9人</option>
+                    <option value="10">10人</option>
+                    <option value="11">11人</option>
+                    <option value="12">12人</option>
+                </select>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="color: #ccc; margin-bottom: 8px; display: block;">当前角色配置 (<span id="roleCount">6</span>个)</label>
+                <div id="roleConfigDisplay" style="min-height: 50px; margin-bottom: 10px;"></div>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="color: #ccc; margin-bottom: 8px; display: block;">添加角色</label>
+                <div class="role-pool" id="rolePool"></div>
+            </div>
+            
+            <button class="btn btn-success btn-block" onclick="openRoom()">
+                🚪 开放房间（允许玩家加入）
+            </button>
+            
+            <p class="info-text">
+                💡 设置好人数和角色后，点击"开放房间"玩家才能加入
+            </p>
+        </div>
+        
+        <div id="waitingArea" class="card hidden">
+            <div class="card-title">
+                <span>👥 玩家列表 (<span id="playerCount">0</span>/<span id="maxPlayers">6</span>)</span>
+                <span class="status-badge status-open">开放中</span>
+            </div>
+            <div id="playersList" class="players-grid"></div>
+            
+            <div id="godWaitingActions" class="hidden" style="margin-top: 20px;">
+                <button class="btn btn-primary btn-block" onclick="startGameManual()">
+                    🎮 开始游戏（人满自动开始）
+                </button>
+                <p class="info-text" style="text-align: center;">
+                    当前 <span id="currentPlayerCount">0</span>/<span id="requiredPlayerCount">6</span> 人，满员自动开始
+                </p>
+            </div>
+            
+            <div id="playerWaitingInfo" class="hidden" style="margin-top: 20px; text-align: center;">
+                <p class="info-text">⏳ 等待上帝开始游戏...</p>
+            </div>
+        </div>
+        
+        <div id="gameArea" class="hidden">
+            <div id="playerRoleCard" class="role-card hidden">
+                <div class="role-icon" id="roleIcon">🎭</div>
+                <div class="role-name" id="roleName">???</div>
+                <p style="color: #aaa; margin-top: 10px;">点击卡片查看你的身份</p>
+            </div>
+            
+            <div id="godView" class="card hidden">
+                <div class="card-title">
+                    <span>👁️ 上帝视角 - 所有身份</span>
+                    <span class="status-badge status-playing">游戏中</span>
+                </div>
+                <div id="allRolesList"></div>
+                
+                <div class="god-panel">
+                    <p style="color: #aaa; margin-bottom: 10px;">👇 点击玩家广播身份给所有人</p>
+                    <div id="godPlayerList"></div>
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <button id="revealRoleBtn" class="btn btn-secondary hidden" onclick="toggleRoleCard()">
+                    👀 查看身份
+                </button>
+                <button id="resetGameBtn" class="btn btn-secondary hidden" onclick="resetGame()">
+                    🔄 重新发牌
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="toastContainer"></div>
+    
+    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
+    <script>
+        const roomCode = '{{ room_code }}';
+        let socket = null;
+        let playerName = sessionStorage.getItem('playerName') || '';
+        let isGod = false;
+        let isCreator = roomCode === 'new' ? true : (sessionStorage.getItem('isCreator') === 'true');
+        let gameStarted = false;
+        let myRole = null;
+        let players = [];
+        let roleConfig = [];
+        let maxPlayers = 6;
+        let allRoles = {};
+        let availableRoles = [];
+        let roomCreatedAt = null;
+        let acceptingPlayers = false;
+        let roomTimerInterval = null;
+        let godOnline = true;
+        let offlinePlayers = new Set();
+        let isPageDirty = true;
+        
+        let userId = localStorage.getItem('werewolf_user_id');
+        if (!userId) {
+            userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('werewolf_user_id', userId);
+        }
+        
+        const roleIcons = {
+            '狼人': '🐺', '预言家': '🔮', '女巫': '🧙',
+            '猎人': '🏹', '守卫': '🛡️', '白痴': '🤡', '平民': '👨',
+            '白狼王': '🐺👑', '狼美人': '🐺💋', '石像鬼': '🗿🐺',
+            '丘比特': '🏹❤️', '长老': '🧓', '替罪羊': '🐐', '吹笛者': '🎵'
+        };
+        
+        window.addEventListener('beforeunload', function(e) {
+            if (isPageDirty && !gameStarted) {
+                const message = '您确定要离开吗？房间数据可能会丢失。';
+                e.preventDefault();
+                e.returnValue = message;
+                return message;
+            }
+            
+            if (roomTimerInterval) clearInterval(roomTimerInterval);
+            if (socket) socket.disconnect();
+        });
+        
+        function markPageImportant() {
+            isPageDirty = true;
+        }
+        
+        function safeGetElement(id) {
+            return document.getElementById(id);
+        }
+        
+        function safeSetText(id, text) {
+            const el = safeGetElement(id);
+            if (el) el.textContent = text;
+        }
+        
+        function hideLoading(text) {
+            safeSetText('loadingText', text || '加载完成');
+            setTimeout(() => {
+                const overlay = safeGetElement('loadingOverlay');
+                if (overlay) overlay.style.display = 'none';
+            }, 500);
+        }
+        
+        function showToast(msg, isError = false) {
+            const container = safeGetElement('toastContainer');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.style.background = isError ? 'rgba(233,69,96,0.9)' : 'rgba(0,0,0,0.8)';
+            toast.textContent = msg;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+        
+        function copyRoomCode() {
+            const codeEl = safeGetElement('roomCodeDisplay');
+            const code = codeEl ? codeEl.textContent : '';
+            
+            if (!code || code === '------') {
+                showToast('暂无房间号', true);
+                return;
+            }
+            
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(code).then(() => {
+                    showToast('房间号已复制');
+                }).catch(() => {
+                    fallbackCopy(code);
+                });
+            } else {
+                fallbackCopy(code);
+            }
+        }
+        
+        function fallbackCopy(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                showToast('房间号已复制');
+            } catch (err) {
+                showToast('复制失败，请手动复制', true);
+            }
+            document.body.removeChild(textarea);
+        }
+        
+        function leaveRoom() {
+            if (confirm('确定离开房间？')) {
+                isPageDirty = false;
+                sessionStorage.removeItem('playerName');
+                sessionStorage.removeItem('isCreator');
+                window.location.href = '/';
+            }
+        }
+        
+        function updateRoomTimer() {
+            if (!roomCreatedAt) return;
+            
+            try {
+                const parts = roomCreatedAt.split(/[- :]/);
+                if (parts.length < 6) return;
+                
+                const created = new Date(
+                    parseInt(parts[0]),
+                    parseInt(parts[1]) - 1,
+                    parseInt(parts[2]),
+                    parseInt(parts[3]),
+                    parseInt(parts[4]),
+                    parseInt(parts[5])
+                );
+                
+                if (isNaN(created.getTime())) return;
+                
+                const now = new Date();
+                const elapsed = Math.floor((now - created) / 1000);
+                const remaining = Math.max(0, 35 * 60 - elapsed);
+                
+                const minutes = Math.floor(remaining / 60);
+                const seconds = remaining % 60;
+                safeSetText('roomTimer', `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+                
+                if (remaining <= 0 && roomTimerInterval) {
+                    clearInterval(roomTimerInterval);
+                }
+            } catch (e) {
+                console.error('更新计时器失败:', e);
+            }
+        }
+        
+        function updatePlayersList() {
+            const container = safeGetElement('playersList');
+            if (!container) return;
+            
+            safeSetText('playerCount', players.length);
+            safeSetText('maxPlayers', maxPlayers);
+            safeSetText('currentPlayerCount', players.length);
+            safeSetText('requiredPlayerCount', maxPlayers);
+            
+            let html = '';
+            
+            if (!isGod && !godOnline) {
+                html += `<div class="god-offline-banner">👑 上帝暂时离开，请稍等...</div>`;
+            }
+            
+            players.forEach(name => {
+                const isOffline = offlinePlayers.has(name);
+                html += `<div class="player-card ${isOffline ? 'player-offline' : ''}">
+                    <div class="player-icon">👤</div>
+                    <div class="player-name">
+                        ${escapeHtml(name)}${name === playerName ? ' (你)' : ''}
+                        ${isOffline ? '<div class="offline-badge">离线</div>' : ''}
+                    </div>
+                    ${isGod && !gameStarted ? `<button class="kick-btn" onclick="kickPlayer('${name}')" title="踢出">✕</button>` : ''}
+                </div>`;
+            });
+            
+            for (let i = players.length; i < maxPlayers; i++) {
+                html += `<div class="player-card" style="opacity: 0.5;">
+                    <div class="player-icon">⬜</div>
+                    <div class="player-name">等待加入</div>
+                </div>`;
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        function updateRoleConfigDisplay() {
+            const container = safeGetElement('roleConfigDisplay');
+            if (!container) return;
+            
+            const counts = {};
+            roleConfig.forEach(r => counts[r] = (counts[r] || 0) + 1);
+            
+            let html = '';
+            for (const [role, count] of Object.entries(counts)) {
+                const icon = roleIcons[role] || '🎭';
+                html += `<span class="role-tag" onclick="removeRole('${role}')" title="点击移除">
+                    ${icon} ${role} x${count}
+                </span>`;
+            }
+            container.innerHTML = html || '<span style="color:#aaa;">点击下方角色添加</span>';
+            safeSetText('roleCount', roleConfig.length);
+        }
+        
+        function renderRolePool() {
+            const container = safeGetElement('rolePool');
+            if (!container) return;
+            
+            let html = '';
+            availableRoles.forEach(role => {
+                const icon = roleIcons[role] || '🎭';
+                html += `<span class="role-tag" onclick="addRole('${role}')">${icon} ${role}</span>`;
+            });
+            container.innerHTML = html;
+        }
+        
+        function addRole(role) {
+            if (!isGod || acceptingPlayers) return;
+            socket.emit('add_role', { room_code: getRoomCode(), role: role });
+        }
+        
+        function removeRole(role) {
+            if (!isGod || acceptingPlayers) return;
+            const index = roleConfig.indexOf(role);
+            if (index > -1) {
+                socket.emit('remove_role', { room_code: getRoomCode(), index: index });
+            }
+        }
+        
+        function getRoomCode() {
+            const codeEl = safeGetElement('roomCodeDisplay');
+            return (roomCode === 'new' && codeEl) ? codeEl.textContent : roomCode;
+        }
+        
+        function openRoom() {
+            if (!isGod) return;
+            socket.emit('open_room', { room_code: getRoomCode() });
+        }
+        
+        function updatePlayerCount() {
+            if (!isGod || acceptingPlayers) return;
+            const select = safeGetElement('playerCountSelect');
+            if (!select) return;
+            maxPlayers = parseInt(select.value);
+            socket.emit('update_settings', { 
+                room_code: getRoomCode(), 
+                max_players: maxPlayers 
+            });
+        }
+        
+        function startGameManual() {
+            if (!isGod) return;
+            if (players.length === 0) {
+                showToast('没有玩家加入', true);
+                return;
+            }
+            socket.emit('start_game_manual', { room_code: getRoomCode() });
+        }
+        
+        function kickPlayer(name) {
+            if (!isGod || !confirm(`确定踢出玩家 ${name} 吗？`)) return;
+            socket.emit('kick_player', { room_code: getRoomCode(), player_name: name });
+        }
+        
+        function toggleRoleCard() {
+            const card = safeGetElement('playerRoleCard');
+            if (card) card.classList.toggle('hidden');
+        }
+        
+        function resetGame() {
+            if (!isGod) {
+                showToast('只有上帝可以重新发牌', true);
+                return;
+            }
+            if (confirm('确定重新发牌？')) {
+                socket.emit('reset_game', { room_code: getRoomCode() });
+            }
+        }
+        
+        function endGame() {
+            if (!isGod) return;
+            if (confirm('确定结束游戏吗？')) {
+                socket.emit('end_game', { room_code: getRoomCode() });
+            }
+        }
+        
+        function revealPlayerRole(player) {
+            if (!isGod) return;
+            socket.emit('reveal_role', {
+                room_code: getRoomCode(),
+                player_name: player
+            });
+        }
+        
+        function showGameArea() {
+            const godSetup = safeGetElement('godSetupArea');
+            const waiting = safeGetElement('waitingArea');
+            const game = safeGetElement('gameArea');
+            
+            if (godSetup) godSetup.classList.add('hidden');
+            if (waiting) waiting.classList.add('hidden');
+            if (game) game.classList.remove('hidden');
+            
+            if (!gameStarted || !myRole) {
+                const roleCard = safeGetElement('playerRoleCard');
+                if (roleCard) roleCard.classList.add('hidden');
+            }
+            
+            if (isGod) {
+                const godView = safeGetElement('godView');
+                const resetBtn = safeGetElement('resetGameBtn');
+                const playerRoleCard = safeGetElement('playerRoleCard');
+                
+                if (godView) godView.classList.remove('hidden');
+                if (resetBtn) resetBtn.classList.remove('hidden');
+                if (playerRoleCard) playerRoleCard.classList.add('hidden');
+                
+                const actionButtons = document.querySelector('.action-buttons');
+                if (actionButtons && !safeGetElement('endGameBtn')) {
+                    const endBtn = document.createElement('button');
+                    endBtn.id = 'endGameBtn';
+                    endBtn.className = 'btn btn-secondary';
+                    endBtn.style.background = 'rgba(233,69,96,0.3)';
+                    endBtn.onclick = endGame;
+                    endBtn.innerHTML = '🏁 结束游戏';
+                    actionButtons.appendChild(endBtn);
+                }
+                
+                if (Object.keys(allRoles).length > 0) {
+                    updateGodView();
+                }
+            } else {
+                const revealBtn = safeGetElement('revealRoleBtn');
+                if (revealBtn && gameStarted && myRole) {
+                    revealBtn.classList.remove('hidden');
+                } else if (revealBtn) {
+                    revealBtn.classList.add('hidden');
+                }
+            }
+        }
+        
+        function updateGodView() {
+            if (!isGod) return;
+            
+            const allRolesContainer = safeGetElement('allRolesList');
+            const godListContainer = safeGetElement('godPlayerList');
+            
+            const currentPlayers = players.length > 0 ? players : Object.keys(allRoles);
+            
+            if (allRolesContainer) {
+                let html = '<div style="display:grid;gap:8px;">';
+                for (const player of currentPlayers) {
+                    const role = allRoles[player] || '未知';
+                    const icon = roleIcons[role] || '🎭';
+                    html += `<div style="display:flex;justify-content:space-between;padding:8px;background:rgba(255,255,255,0.05);border-radius:8px;">
+                        <span>${icon} ${escapeHtml(player)}</span>
+                        <span style="color:#e94560;">${role}</span>
+                    </div>`;
+                }
+                html += '</div>';
+                allRolesContainer.innerHTML = html || '<p style="color:#aaa;text-align:center;">暂无角色数据</p>';
+            }
+            
+            if (godListContainer) {
+                let godHtml = '';
+                currentPlayers.forEach(player => {
+                    const role = allRoles[player] || '未知';
+                    godHtml += `<div class="god-player-item" onclick="revealPlayerRole('${player}')">
+                        <span>${roleIcons[role] || '🎭'} ${escapeHtml(player)}</span>
+                        <span class="player-role">${role}</span>
+                    </div>`;
+                });
+                godListContainer.innerHTML = godHtml || '<p style="color:#aaa;text-align:center;">暂无玩家</p>';
+            }
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function displayMyRole(role) {
+            myRole = role;
+            const icon = roleIcons[myRole] || '🎭';
+            safeSetText('roleIcon', icon);
+            safeSetText('roleName', myRole);
+            
+            const card = safeGetElement('playerRoleCard');
+            if (card) {
+                card.classList.remove('hidden');
+                card.classList.add('role-hidden');
+                card.onclick = function() {
+                    this.classList.remove('role-hidden');
+                    setTimeout(() => this.classList.add('role-hidden'), 3000);
+                };
+            }
+        }
+        
+        async function tryRestoreSession() {
+            if (isCreator || playerName) return;
+            
+            try {
+                const response = await fetch(`/api/check_user_room/${userId}`);
+                if (!response.ok) return;
+                
+                const data = await response.json();
+                if (data.has_room && data.room_code === roomCode) {
+                    console.log('找到活跃房间记录');
+                }
+            } catch (e) {
+                console.error('恢复会话失败:', e);
+            }
+        }
+        
+        function initSocket() {
+            if (!playerName && !isCreator) {
+                const savedName = sessionStorage.getItem('playerName');
+                if (savedName) playerName = savedName;
+            }
+            
+            const socketOptions = {
+                query: { user_id: userId },
+                reconnection: true,
+                reconnectionAttempts: 5,
+                reconnectionDelay: 1000
+            };
+            
+            socket = io(socketOptions);
+            
+            socket.on('connect', () => {
+                safeSetText('loadingText', '连接成功，正在恢复...');
+                
+                if (isCreator) {
+                    socket.emit('create_room', { 
+                        player_name: playerName || '上帝',
+                        user_id: userId
+                    });
+                } else if (roomCode !== 'new') {
+                    const joinName = playerName || sessionStorage.getItem('playerName') || '';
+                    if (!joinName) {
+                        hideLoading('请重新输入昵称');
+                        showToast('会话已过期，请重新加入', true);
+                        setTimeout(() => window.location.href = '/', 2000);
+                        return;
+                    }
+                    socket.emit('join_room', {
+                        room_code: roomCode,
+                        player_name: joinName,
+                        user_id: userId
+                    });
+                } else {
+                    window.location.href = '/';
+                }
+            });
+            
+            socket.on('connect_error', () => {
+                safeSetText('loadingText', '连接失败，正在重试...');
+            });
+            
+            socket.on('error', data => {
+                showToast(data.message, true);
+                hideLoading('出错啦');
+                
+                if (data.message.includes('房间不存在') || data.message.includes('已结束')) {
+                    setTimeout(() => window.location.href = '/', 3000);
+                }
+            });
+            
+            socket.on('room_created', data => {
+                safeSetText('roomCodeDisplay', data.room_code);
+                isGod = true;
+                playerName = data.god_name;
+                sessionStorage.setItem('playerName', playerName);
+                sessionStorage.setItem('isCreator', 'true');
+                
+                maxPlayers = data.max_players;
+                roleConfig = data.role_config || [];
+                availableRoles = data.available_roles || [];
+                roomCreatedAt = data.created_at;
+                
+                if (data.user_id) {
+                    localStorage.setItem('werewolf_user_id', data.user_id);
+                    userId = data.user_id;
+                }
+                
+                const godSetup = safeGetElement('godSetupArea');
+                const waiting = safeGetElement('waitingArea');
+                const game = safeGetElement('gameArea');
+                const roleCard = safeGetElement('playerRoleCard');
+                
+                if (godSetup) godSetup.classList.remove('hidden');
+                if (waiting) waiting.classList.add('hidden');
+                if (game) game.classList.add('hidden');
+                if (roleCard) roleCard.classList.add('hidden');
+                
+                const resetBtn = safeGetElement('resetGameBtn');
+                if (resetBtn) resetBtn.classList.remove('hidden');
+                
+                const select = safeGetElement('playerCountSelect');
+                if (select) select.value = maxPlayers;
+                
+                if (availableRoles.length > 0) {
+                    renderRolePool();
+                }
+                if (roleConfig.length > 0) {
+                    updateRoleConfigDisplay();
+                }
+                
+                updateRoomTimer();
+                if (roomTimerInterval) clearInterval(roomTimerInterval);
+                roomTimerInterval = setInterval(updateRoomTimer, 1000);
+                
+                hideLoading('房间创建成功');
+                history.replaceState(null, '', `/room/${data.room_code}`);
+                
+                markPageImportant();
+                showToast('房间创建成功！设置好角色后点击"开放房间"', false);
+            });
+            
+            socket.on('god_reconnected', data => {
+                isGod = true;
+                
+                if (!playerName) {
+                    playerName = sessionStorage.getItem('playerName') || '上帝';
+                }
+                
+                const roleCard = safeGetElement('playerRoleCard');
+                if (roleCard) roleCard.classList.add('hidden');
+                
+                if (data.game_started) {
+                    gameStarted = true;
+                    players = data.players || [];
+                    
+                    if (data.all_roles) {
+                        allRoles = data.all_roles;
+                    }
+                    
+                    showGameArea();
+                    
+                    if (data.all_roles) {
+                        updateGodView();
+                    }
+                } else {
+                    maxPlayers = data.max_players || 6;
+                    roleConfig = data.role_config || [];
+                    availableRoles = data.available_roles || [];
+                    roomCreatedAt = data.created_at;
+                    acceptingPlayers = data.accepting_players || false;
+                    players = data.players || [];
+                    
+                    if (roomTimerInterval) clearInterval(roomTimerInterval);
+                    roomTimerInterval = setInterval(updateRoomTimer, 1000);
+                    updateRoomTimer();
+                    
+                    if (acceptingPlayers) {
+                        const godSetup = safeGetElement('godSetupArea');
+                        const waiting = safeGetElement('waitingArea');
+                        const godActions = safeGetElement('godWaitingActions');
+                        
+                        if (godSetup) godSetup.classList.add('hidden');
+                        if (waiting) waiting.classList.remove('hidden');
+                        if (godActions) godActions.classList.remove('hidden');
+                        updatePlayersList();
+                    } else {
+                        const godSetup = safeGetElement('godSetupArea');
+                        const waiting = safeGetElement('waitingArea');
+                        const game = safeGetElement('gameArea');
+                        
+                        if (godSetup) godSetup.classList.remove('hidden');
+                        if (waiting) waiting.classList.add('hidden');
+                        if (game) game.classList.add('hidden');
+                        
+                        if (availableRoles.length > 0) {
+                            renderRolePool();
+                        }
+                        if (roleConfig.length > 0) {
+                            updateRoleConfigDisplay();
+                        }
+                    }
+                }
+                
+                hideLoading('重新连接成功');
+                markPageImportant();
+                showToast('欢迎回来！', false);
+            });
+            
+            socket.on('room_opened', data => {
+                acceptingPlayers = true;
+                const godSetup = safeGetElement('godSetupArea');
+                const waiting = safeGetElement('waitingArea');
+                const godActions = safeGetElement('godWaitingActions');
+                
+                if (godSetup) godSetup.classList.add('hidden');
+                if (waiting) waiting.classList.remove('hidden');
+                if (godActions) godActions.classList.remove('hidden');
+                
+                updatePlayersList();
+                showToast('房间已开放，等待玩家加入...', false);
+            });
+            
+            socket.on('room_joined', data => {
+                safeSetText('roomCodeDisplay', data.room_code);
+                isGod = false;
+                playerName = data.player_name;
+                sessionStorage.setItem('playerName', playerName);
+                sessionStorage.setItem('isCreator', 'false');
+                
+                players = data.players || [];
+                maxPlayers = data.max_players || 6;
+                
+                if (data.user_id) {
+                    localStorage.setItem('werewolf_user_id', data.user_id);
+                    userId = data.user_id;
+                }
+                
+                const roleCard = safeGetElement('playerRoleCard');
+                if (roleCard) roleCard.classList.add('hidden');
+                
+                const game = safeGetElement('gameArea');
+                if (game) game.classList.add('hidden');
+                
+                if (data.game_started && data.my_role) {
+                    gameStarted = true;
+                    myRole = data.my_role;
+                    showGameArea();
+                    displayMyRole(myRole);
+                } else {
+                    const waiting = safeGetElement('waitingArea');
+                    const playerInfo = safeGetElement('playerWaitingInfo');
+                    const godSetup = safeGetElement('godSetupArea');
+                    
+                    if (waiting) waiting.classList.remove('hidden');
+                    if (playerInfo) playerInfo.classList.remove('hidden');
+                    if (godSetup) godSetup.classList.add('hidden');
+                }
+                
+                updatePlayersList();
+                hideLoading('加入成功');
+                history.replaceState(null, '', `/room/${data.room_code}`);
+                
+                markPageImportant();
+                showToast(`成功加入房间！上帝: ${data.god_name}`, false);
+            });
+            
+            socket.on('player_reconnected', data => {
+                gameStarted = data.game_started;
+                players = data.players || [];
+                maxPlayers = data.max_players || 6;
+                
+                const roleCard = safeGetElement('playerRoleCard');
+                if (roleCard) roleCard.classList.add('hidden');
+                
+                const game = safeGetElement('gameArea');
+                if (game) game.classList.add('hidden');
+                
+                updatePlayersList();
+                hideLoading('重新连接成功');
+                
+                if (gameStarted && data.my_role) {
+                    myRole = data.my_role;
+                    showGameArea();
+                    displayMyRole(myRole);
+                } else {
+                    const waiting = safeGetElement('waitingArea');
+                    const playerInfo = safeGetElement('playerWaitingInfo');
+                    const godSetup = safeGetElement('godSetupArea');
+                    
+                    if (waiting) waiting.classList.remove('hidden');
+                    if (playerInfo) playerInfo.classList.remove('hidden');
+                    if (godSetup) godSetup.classList.add('hidden');
+                }
+                
+                markPageImportant();
+                showToast('欢迎回来！', false);
+            });
+            
+            socket.on('players_updated', data => {
+                players = data.players;
+                maxPlayers = data.max_players;
+                updatePlayersList();
+            });
+            
+            socket.on('god_status', data => {
+                godOnline = data.online;
+                if (!isGod) {
+                    if (!data.online) {
+                        showToast('上帝暂时离开，请稍等...', true);
+                        updatePlayersList();
+                    } else {
+                        showToast('上帝回来了！', false);
+                        updatePlayersList();
+                    }
+                }
+            });
+            
+            socket.on('player_offline', data => {
+                offlinePlayers.add(data.player_name);
+                updatePlayersList();
+            });
+            
+            socket.on('player_online', data => {
+                offlinePlayers.delete(data.player_name);
+                updatePlayersList();
+            });
+            
+            socket.on('player_joined', data => {
+                offlinePlayers.delete(data.player_name);
+                updatePlayersList();
+                showToast(`${data.player_name} 加入了房间`, false);
+            });
+            
+            socket.on('settings_updated', data => {
+                maxPlayers = data.max_players;
+                roleConfig = data.role_config;
+                safeSetText('maxPlayers', maxPlayers);
+                safeSetText('requiredPlayerCount', maxPlayers);
+                updateRoleConfigDisplay();
+            });
+            
+            socket.on('game_started', data => {
+                gameStarted = true;
+                players = data.players;
+                isPageDirty = false;
+                showGameArea();
+                showToast('游戏开始！天黑请闭眼...', false);
+            });
+            
+            socket.on('game_ended', data => {
+                gameStarted = false;
+                myRole = null;
+                allRoles = {};
+                acceptingPlayers = false;
+                isPageDirty = true;
+                
+                const game = safeGetElement('gameArea');
+                const godSetup = safeGetElement('godSetupArea');
+                const waiting = safeGetElement('waitingArea');
+                const roleCard = safeGetElement('playerRoleCard');
+                
+                if (game) game.classList.add('hidden');
+                if (godSetup) godSetup.classList.remove('hidden');
+                if (waiting) waiting.classList.add('hidden');
+                if (roleCard) roleCard.classList.add('hidden');
+                
+                const endBtn = safeGetElement('endGameBtn');
+                if (endBtn) endBtn.remove();
+                
+                showToast(data.message, false);
+            });
+            
+            socket.on('role_assigned', data => {
+                displayMyRole(data.role);
+                showToast(`你的身份是: ${data.role}`, false);
+            });
+            
+            socket.on('god_view', data => {
+                allRoles = data.all_roles || {};
+                players = data.players || [];
+                updateGodView();
+            });
+            
+            socket.on('role_revealed', data => {
+                showToast(`${data.player} 的身份是: ${data.role}`, false);
+                if (isGod) {
+                    allRoles[data.player] = data.role;
+                    updateGodView();
+                }
+            });
+            
+            socket.on('game_reset', data => {
+                gameStarted = false;
+                myRole = null;
+                allRoles = {};
+                acceptingPlayers = false;
+                isPageDirty = true;
+                
+                const game = safeGetElement('gameArea');
+                const godSetup = safeGetElement('godSetupArea');
+                const waiting = safeGetElement('waitingArea');
+                const roleCard = safeGetElement('playerRoleCard');
+                
+                if (game) game.classList.add('hidden');
+                if (godSetup) godSetup.classList.remove('hidden');
+                if (waiting) waiting.classList.add('hidden');
+                if (roleCard) roleCard.classList.add('hidden');
+                
+                const endBtn = safeGetElement('endGameBtn');
+                if (endBtn) endBtn.remove();
+                
+                players = data.players;
+                updatePlayersList();
+                showToast(data.message, false);
+            });
+            
+            socket.on('you_were_kicked', () => {
+                showToast('你被上帝踢出了房间', true);
+                isPageDirty = false;
+                sessionStorage.clear();
+                setTimeout(() => window.location.href = '/', 2000);
+            });
+            
+            socket.on('room_closed', data => {
+                showToast(data.message, true);
+                isPageDirty = false;
+                sessionStorage.clear();
+                setTimeout(() => window.location.href = '/', 2000);
+            });
+        }
+        
+        document.addEventListener('DOMContentLoaded', async function() {
+            const selects = document.querySelectorAll('select');
+            selects.forEach(select => {
+                select.style.background = 'rgba(255, 255, 255, 0.1)';
+                select.style.color = '#fff';
+            });
+            
+            await tryRestoreSession();
+            
+            const roleCard = safeGetElement('playerRoleCard');
+            if (roleCard) roleCard.classList.add('hidden');
+            
+            const gameArea = safeGetElement('gameArea');
+            if (gameArea) gameArea.classList.add('hidden');
+            
+            initSocket();
+        });
+        
+        window.addEventListener('beforeunload', () => {
+            if (roomTimerInterval) clearInterval(roomTimerInterval);
+            if (socket) socket.disconnect();
+        });
+    </script>
+</body>
+</html>
