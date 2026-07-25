@@ -1,4 +1,4 @@
-# 🐺 狼人杀 / Werewolf
+# 狼人杀 / Werewolf
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
@@ -11,6 +11,12 @@
 狼人杀是一款社交推理桌游。本项目将其搬到线上，支持多人在线实时游戏，无需下载客户端，浏览器打开即玩。
 
 目前已稳定运行，支持 4-12 人游戏。
+
+## 在线体验
+
+🎮 **示例网站**：[https://wmh.wwww.us.kg/](https://wmh.wwww.us.kg/)
+
+> 网站可能存在访问延迟或临时维护，如无法访问请稍后再试或自行部署。
 
 ## 特性
 
@@ -64,18 +70,9 @@ pip install -r requirements.txt
 # 运行
 python app.py
 
-# 访问 http://localhost:5000
+# 访问 http://localhost:5544
+# 可以在yml修改
 ```
-
-## Docker 部署优势
-
-使用 Docker 部署的好处：
-
-- **开箱即用**：无需安装 Python 环境，无需处理依赖冲突
-- **环境隔离**：应用运行在独立容器中，不影响宿主机
-- **快速迁移**：镜像打包后可在任何支持 Docker 的服务器上运行
-- **自动重启**：容器异常退出后自动恢复
-- **日志管理**：日志自动落盘到 `./logs` 目录
 
 ## 游戏流程
 
